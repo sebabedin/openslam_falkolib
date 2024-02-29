@@ -61,6 +61,22 @@ int main(int argc, char** argv) {
 	cout << "num keypoints1 extracted: " << keypoints1.size() << endl;
 	cout << "num keypoints2 extracted: " << keypoints2.size() << endl;
 
+	cout << "keypoints1:" << endl;
+	for(int i = 0; i < keypoints1.size(); ++i)
+    {
+		cout << keypoints1[i].index << " ";
+    }
+	cout << endl;
+	cout << "keypoints1 end" << endl;
+
+	cout << "keypoints2:" << endl;
+	for(int i = 0; i < keypoints2.size(); ++i)
+    {
+		cout << keypoints2[i].index << " ";
+    }
+	cout << endl;
+	cout << "keypoints2 end" << endl;
+
 	CGHExtractor<FALKO> cgh(16);
 	BSCExtractor<FALKO> bsc(16, 8);
 
