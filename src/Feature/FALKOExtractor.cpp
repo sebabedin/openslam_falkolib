@@ -18,6 +18,13 @@
  * along with FALKOLib.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <falkolib/Feature/FALKOExtractor.h>
+#include <iostream> //*
+// #define LOGGER(VAR) std::cout << #VAR << ": " << VAR << std::endl;
+// #define LOGGER_SEPARATOR() std::cout << "------------------------------------------------------------" << std::endl
+
+#define LOGGER(VAR)
+#define LOGGER_SEPARATOR()
+// #define LOGGER_ENABLE
 
 using namespace std;
 
@@ -38,6 +45,7 @@ namespace falkolib {
 
     void FALKOExtractor::extract(const LaserScan& scan, std::vector<FALKO>& keypoints) {
         const int numBeams = scan.getNumBeams();
+        LOGGER(numBeams)//*
         vector<int> scores(numBeams, -10);
         vector<Point2d> neigh;
         vector<double> radius(numBeams);
@@ -56,63 +64,104 @@ namespace falkolib {
         vector<int> neighCircularIndexesR;
 
         for (int ind = 0; ind < numBeams; ++ind) {
+            LOGGER(ind)//*
             if (scan.ranges[ind] < minExtractionRange || scan.ranges[ind] > maxExtractionRange) {
                 scores[ind] = -10;
+                // std::cout << "fuera de rango ind" << ind << std::endl; //*
+                LOGGER(scores[ind])//*
+                LOGGER_SEPARATOR();
                 continue;
             }
             neigh.clear();
             radius[ind] = getNeighRadius(scan.ranges[ind]);
+            // std::cout << "radius[ind]" << radius[ind] << std::endl; //*
+            LOGGER(radius[ind])//*
             scan.getNeighPoints(ind, radius[ind], neigh, midIndex);
             neighSize = neigh.size();
+            // std::cout << "neighSize" << neighSize << std::endl; //*
+            LOGGER(neighSize)//*
 
             neighSizeL = midIndex;
+            LOGGER(neighSizeL)//*
             neighSizeR = neighSize - midIndex - 1;
+            LOGGER(neighSizeR)//*
 
             if (neighSizeL < neighMinPoint || neighSizeR < neighMinPoint) {
                 scores[ind] = -10;
+                LOGGER(scores[ind])//*
+                LOGGER_SEPARATOR();
                 continue;
             }
 
             triangleBLength = pointsDistance(neigh.front(), neigh.back());
             triangleHLength = std::abs(signedTriangleArea(neigh[midIndex], neigh.front(), neigh.back())) / triangleBLength;
+            LOGGER(triangleBLength)//*
+            LOGGER(triangleHLength)//*
 
             if (triangleBLength < (radius[ind] / bRatio) || triangleHLength < (radius[ind] / bRatio)) {
                 scores[ind] = -10;
+                LOGGER(scores[ind])//*
+                LOGGER_SEPARATOR();
                 continue;
             }
 
             thetaCorner[ind] = getCornerOrientation(neigh, midIndex);
+            LOGGER(thetaCorner[ind])//*
 
             neighCircularIndexesL.resize(neighSizeL, 0);
             neighCircularIndexesR.resize(neighSizeR, 0);
 
             for (int i = 0; i < neighSizeL; ++i) {
-                neighCircularIndexesL[i] = getCircularSectorIndex(neigh[i], neigh[midIndex], thetaCorner[ind]);
+                int neighCircularIndexes = getCircularSectorIndex(neigh[i], neigh[midIndex], thetaCorner[ind]);
+                neighCircularIndexesL[i] = neighCircularIndexes;
+                #ifdef LOGGER_ENABLE
+                std::cout << "neighCircularIndexesL " << i << " " << neigh[i][0] << " " << neigh[i][1] << " " << neigh[midIndex][0] << " " << neigh[midIndex][1] << " " << thetaCorner[ind] << " " << neighCircularIndexes << std::endl;
+                #endif
             }
             for (int i = 0; i < neighSizeR; ++i) {
-                neighCircularIndexesR[i] = getCircularSectorIndex(neigh[midIndex + i + 1], neigh[midIndex], thetaCorner[ind]);
+                int neighCircularIndexes = getCircularSectorIndex(neigh[midIndex + i + 1], neigh[midIndex], thetaCorner[ind]);
+                neighCircularIndexesR[i] = neighCircularIndexes;
+                #ifdef LOGGER_ENABLE
+                std::cout << "neighCircularIndexesR " << i << " " << neigh[midIndex + i + 1][0] << " " << neigh[midIndex + i + 1][1] << " " << neigh[midIndex][0] << " " << neigh[midIndex][1] << " " << thetaCorner[ind] << " " << neighCircularIndexes << std::endl;
+                #endif
             }
+            // LOGGER(neighCircularIndexesL[ind])//*
+            // LOGGER(neighCircularIndexesR[ind])//*
 
             scoreL = 0;
             scoreR = 0;
 
             for (int i = midIndex - 1; i >= 0; --i) {
                 for (int j = i; j >= 0; --j) {
-                    scoreL += circularSectorDistance(neighCircularIndexesL[i], neighCircularIndexesL[j], gridSectors);
+                    int score_ = circularSectorDistance(neighCircularIndexesL[i], neighCircularIndexesL[j], gridSectors);
+                    scoreL += score_;
+                    #ifdef LOGGER_ENABLE
+                    std::cout << "(" << i << "," << j << ") score: " << score_ << ", acc: " << scoreL << std::endl;
+                    #endif
                 }
             }
 
             for (int i = midIndex + 1; i < neighSize; ++i) {
                 for (int j = i; j < neighSize; ++j) {
-                    scoreR += circularSectorDistance(neighCircularIndexesR[i - midIndex - 1], neighCircularIndexesR[j - midIndex - 1], gridSectors);
+                    int score_ = circularSectorDistance(neighCircularIndexesR[i - midIndex - 1], neighCircularIndexesR[j - midIndex - 1], gridSectors);
+                    scoreR += score_;
+                    #ifdef LOGGER_ENABLE
+                    std::cout << "(" << i << "," << j << ") score: " << score_ << ", acc: " << scoreR << std::endl;
+                    #endif
                 }
             }
+            LOGGER(scoreL)//*
+            LOGGER(scoreR)//*
 
             scores[ind] = scoreL + scoreR;
+            LOGGER(scores[ind])//*
 
             if (scores[ind] > scoreMax) {
                 scoreMax = scores[ind];
             }
+            LOGGER(scoreMax)//*
+
+            LOGGER_SEPARATOR();
         }
 
         for (int ind = 0; ind < numBeams; ++ind) {
@@ -120,9 +169,15 @@ namespace falkolib {
                 scores[ind] = scoreMax;
             }
             scores[ind] = scoreMax - scores[ind];
+
+            #ifdef LOGGER_ENABLE
+            std::cout << "score " << ind << ": " << scores[ind] << std::endl;
+            #endif
         }
 
+        LOGGER_SEPARATOR();
         NMSKeypoint(scores, scan, 0, numBeams, NMSRadius, (scoreMax * minScoreTh / 100.0), peaks);
+        LOGGER_SEPARATOR();
 
         for (int i = 0; i < peaks.size(); ++i) {
             FALKO kp;
@@ -135,6 +190,10 @@ namespace falkolib {
             } else {
                 kp.point = scan.points[peaks[i]];
             }
+            LOGGER(peaks[i])//*
+            LOGGER(thetaCorner[peaks[i]])//*
+            LOGGER(radius[peaks[i]])//*
+            LOGGER(scan.points[peaks[i]])//*
 
             keypoints.push_back(std::move(kp));
         }
@@ -143,7 +202,11 @@ namespace falkolib {
 
     int FALKOExtractor::circularSectorDistance(int a1, int a2, int res) {
         const int r2 = res / 2;
-        return std::abs(((a1 - a2) + r2) % res - r2);
+        int ret = std::abs(((a1 - a2) + r2) % res - r2);
+        #ifdef LOGGER_ENABLE
+        std::cout << "circularSectorDistance " << a1 << ", " << a2 << ", " << res << ", " << r2 << ", " << ret << std::endl;
+        #endif
+        return ret;
     }
 
     int FALKOExtractor::getCircularSectorIndex(const Point2d& p, const Point2d& pmid, double theta) {
@@ -181,6 +244,11 @@ namespace falkolib {
         unsigned j, jbeg, jend, jmax;
         std::vector<int> candidates;
         peaks.clear();
+
+        LOGGER(ibeg)//*
+        LOGGER(iend)//*
+        LOGGER(radius)//*
+        LOGGER(minval)//*
 
         i = ibeg;
         imax = ibeg;
@@ -227,12 +295,16 @@ namespace falkolib {
                     ++i2;
                 }
             } else {
+                LOGGER(i2)//*
+                LOGGER(candidates[i2])//*
                 peaks.push_back(candidates[i2]);
                 i2 = i1;
                 counter = 0;
             }
         }
         if (i2 != candidates.size()) {
+            LOGGER(i2)//*
+            LOGGER(candidates[i2])//*
             peaks.push_back(candidates[i2]);
         }
     }

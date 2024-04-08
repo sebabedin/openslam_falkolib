@@ -22,6 +22,9 @@
 #include <vector>
 #include <falkolib/Common/Point.h>
 #include <falkolib/Common/GeomUtils.h>
+#include <iostream> //*
+
+#define LOGGER_ENABLE
 
 namespace falkolib {
 
@@ -127,16 +130,54 @@ namespace falkolib {
 		 */
 		void getNeighPoints(int candIndex, double radius, std::vector<Point2d>& neigh, int& midIndex) const {
 			const Point2d& candPoint = points[candIndex];
+			#ifdef LOGGER_ENABLE
+			std::cout << "candIndex: " << candIndex << std::endl;
+			std::cout << "candPoint: " << candPoint[0] << ", " << candPoint[1] << std::endl;
+			std::cout << "radius: " << radius << std::endl;
+			#endif
 			int alpha = std::floor(std::asin(radius / ranges[candIndex]) / angleInc);
+			#ifdef LOGGER_ENABLE
+			std::cout << "ranges[candIndex]: " << ranges[candIndex] << std::endl;
+			std::cout << "angleInc: " << angleInc << std::endl;
+			std::cout << "alpha: " << alpha << std::endl;
+			#endif
 			int begIndex = std::max(0, candIndex - alpha);
+			#ifdef LOGGER_ENABLE
+			std::cout << "begIndex: " << begIndex << std::endl;
+			#endif
 			int endIndex = std::min(candIndex + alpha + 1, numBeams);
-			for (int i = begIndex; i <= endIndex; ++i) {
-				if (pointsDistance(points[i], candPoint) <= radius) {
+			#ifdef LOGGER_ENABLE
+			std::cout << "endIndex: " << endIndex << std::endl;
+			#endif
+			//TODO: el rango de este for debe ser end_index
+			// for (int i = begIndex; i <= endIndex; ++i) {
+			for (int i = begIndex; i < endIndex; ++i) {
+				if(points.size() <= i)
+				{
+					#ifdef LOGGER_ENABLE
+					std::cout << "error, fuera de rango, candIndex:" << candIndex << ", points.size():" << points.size() << ", i:" << i << std::endl;
+					#endif
+				}
+				double distance = pointsDistance(points[i], candPoint);
+				#ifdef LOGGER_ENABLE
+				std::cout << "points[i]: " << points[i][0] << " " << points[i][1];
+				std::cout << ", distance: " << distance;
+				#endif
+				if (distance <= radius) {
 					if (i == candIndex) {
 						midIndex = neigh.size();
 					}
 					neigh.push_back(points[i]);
 				}
+				else
+				{
+					#ifdef LOGGER_ENABLE
+					std::cout << ", OUT";
+					#endif
+				}
+				#ifdef LOGGER_ENABLE
+				std::cout << std::endl;
+				#endif
 			}
 		}
 
