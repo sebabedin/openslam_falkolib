@@ -22,9 +22,7 @@
 #include <vector>
 #include <falkolib/Common/Point.h>
 #include <falkolib/Common/GeomUtils.h>
-#include <iostream> //*
-
-#define LOGGER_ENABLE
+#include <falkolib/Common/logger.h>
 
 namespace falkolib {
 
@@ -130,39 +128,27 @@ namespace falkolib {
 		 */
 		void getNeighPoints(int candIndex, double radius, std::vector<Point2d>& neigh, int& midIndex) const {
 			const Point2d& candPoint = points[candIndex];
-			#ifdef LOGGER_ENABLE
-			std::cout << "candIndex: " << candIndex << std::endl;
-			std::cout << "candPoint: " << candPoint[0] << ", " << candPoint[1] << std::endl;
-			std::cout << "radius: " << radius << std::endl;
-			#endif
+			LOGGER_PRINT("candIndex: " << candIndex);
+			LOGGER_PRINT("candPoint: " << candPoint[0] << ", " << candPoint[1]);
+			LOGGER_PRINT("radius: " << radius);
 			int alpha = std::floor(std::asin(radius / ranges[candIndex]) / angleInc);
-			#ifdef LOGGER_ENABLE
-			std::cout << "ranges[candIndex]: " << ranges[candIndex] << std::endl;
-			std::cout << "angleInc: " << angleInc << std::endl;
-			std::cout << "alpha: " << alpha << std::endl;
-			#endif
+			LOGGER_PRINT("ranges[candIndex]: " << ranges[candIndex]);
+			LOGGER_PRINT("angleInc: " << angleInc);
+			LOGGER_PRINT("alpha: " << alpha);
 			int begIndex = std::max(0, candIndex - alpha);
-			#ifdef LOGGER_ENABLE
-			std::cout << "begIndex: " << begIndex << std::endl;
-			#endif
+			LOGGER_PRINT("begIndex: " << begIndex);
 			int endIndex = std::min(candIndex + alpha + 1, numBeams);
-			#ifdef LOGGER_ENABLE
-			std::cout << "endIndex: " << endIndex << std::endl;
-			#endif
+			LOGGER_PRINT("endIndex: " << endIndex);
 			//TODO: el rango de este for debe ser end_index
 			// for (int i = begIndex; i <= endIndex; ++i) {
 			for (int i = begIndex; i < endIndex; ++i) {
 				if(points.size() <= i)
 				{
-					#ifdef LOGGER_ENABLE
-					std::cout << "error, fuera de rango, candIndex:" << candIndex << ", points.size():" << points.size() << ", i:" << i << std::endl;
-					#endif
+					LOGGER_PRINT("error, fuera de rango, candIndex:" << candIndex << ", points.size():" << points.size() << ", i:" << i);
 				}
 				double distance = pointsDistance(points[i], candPoint);
-				#ifdef LOGGER_ENABLE
-				std::cout << "points[i]: " << points[i][0] << " " << points[i][1];
-				std::cout << ", distance: " << distance;
-				#endif
+				LOGGER("points[i]: " << points[i][0] << " " << points[i][1]);
+				LOGGER(", distance: " << distance);
 				if (distance <= radius) {
 					if (i == candIndex) {
 						midIndex = neigh.size();
@@ -171,13 +157,9 @@ namespace falkolib {
 				}
 				else
 				{
-					#ifdef LOGGER_ENABLE
-					std::cout << ", OUT";
-					#endif
+					LOGGER(", OUT");
 				}
-				#ifdef LOGGER_ENABLE
-				std::cout << std::endl;
-				#endif
+				LOGGER_ENDL();
 			}
 		}
 
