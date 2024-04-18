@@ -139,7 +139,7 @@ namespace falkolib {
 			LOGGER_PRINT("begIndex: " << begIndex);
 			int endIndex = std::min(candIndex + alpha + 1, numBeams);
 			LOGGER_PRINT("endIndex: " << endIndex);
-			//TODO: el rango de este for debe ser end_index
+			//TODO: el rango de este for debe ser end_index, no incluirlo (ver que en la defición de endIndex))
 			// for (int i = begIndex; i <= endIndex; ++i) {
 			for (int i = begIndex; i < endIndex; ++i) {
 				if(points.size() <= i)

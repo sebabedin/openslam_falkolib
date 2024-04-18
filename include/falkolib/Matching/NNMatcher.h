@@ -106,6 +106,11 @@ namespace falkolib {
 						}
 					}
 				}
+				// TODO: se debe agregar una guarda en esta sección, evitando usar imin=-1 al momento de comparar los Th
+				if(-1 == imin)
+				{
+					continue;
+				}
 				if (dmin < distTh && descriptors1[i1].distance(descriptors2[imin]) < descTh) {
 					match.push_back(std::make_pair(i1, imin));
 					matched[imin] = true;
