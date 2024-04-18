@@ -54,6 +54,9 @@ add_library(falkolib
   src/Feature/BSC.cpp
 )
 
+add_executable(falkobsc_scanmatcher test/falkobsc_scanmatcher.cpp)
+target_link_libraries(falkobsc_scanmatcher falkolib ${Boost_LIBRARIES})
+
 add_executable(testKeypointFalko_sintetic test/testKeypointFalko_sintetic.cpp test/test_data_sintetic.cpp)
 target_link_libraries(testKeypointFalko_sintetic falkolib ${Boost_LIBRARIES})
 
