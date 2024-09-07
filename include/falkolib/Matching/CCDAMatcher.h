@@ -153,6 +153,7 @@ namespace falkolib {
             for (auto& id : cliqueMax) {
                 match.push_back(std::make_pair(nodes[id].inputId, nodes[id].targetId));
             }
+            return match.size();
         }
 
     private:

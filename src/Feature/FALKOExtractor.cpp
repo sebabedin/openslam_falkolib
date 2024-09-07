@@ -18,6 +18,7 @@
  * along with FALKOLib.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <falkolib/Feature/FALKOExtractor.h>
+#include <falkolib/Common/logger.h>
 
 using namespace std;
 
@@ -38,6 +39,7 @@ namespace falkolib {
 
     void FALKOExtractor::extract(const LaserScan& scan, std::vector<FALKO>& keypoints) {
         const int numBeams = scan.getNumBeams();
+        LOGGER_PRINT_VAR(numBeams);
         vector<int> scores(numBeams, -10);
         vector<Point2d> neigh;
         vector<double> radius(numBeams);
@@ -56,41 +58,56 @@ namespace falkolib {
         vector<int> neighCircularIndexesR;
 
         for (int ind = 0; ind < numBeams; ++ind) {
+            LOGGER(ind);
             if (scan.ranges[ind] < minExtractionRange || scan.ranges[ind] > maxExtractionRange) {
                 scores[ind] = -10;
+                LOGGER(scores[ind]);
                 continue;
             }
             neigh.clear();
             radius[ind] = getNeighRadius(scan.ranges[ind]);
+            LOGGER_PRINT_VAR(radius[ind]);
             scan.getNeighPoints(ind, radius[ind], neigh, midIndex);
             neighSize = neigh.size();
+            LOGGER_PRINT_VAR(neighSize);
 
             neighSizeL = midIndex;
+            LOGGER_PRINT_VAR(neighSizeL);
             neighSizeR = neighSize - midIndex - 1;
+            LOGGER_PRINT_VAR(neighSizeR);
 
             if (neighSizeL < neighMinPoint || neighSizeR < neighMinPoint) {
                 scores[ind] = -10;
+                LOGGER_PRINT_VAR(scores[ind]);
                 continue;
             }
 
             triangleBLength = pointsDistance(neigh.front(), neigh.back());
             triangleHLength = std::abs(signedTriangleArea(neigh[midIndex], neigh.front(), neigh.back())) / triangleBLength;
+            LOGGER_PRINT_VAR(triangleBLength);
+            LOGGER_PRINT_VAR(triangleHLength);
 
             if (triangleBLength < (radius[ind] / bRatio) || triangleHLength < (radius[ind] / bRatio)) {
                 scores[ind] = -10;
+                LOGGER_PRINT_VAR(scores[ind]);
                 continue;
             }
 
             thetaCorner[ind] = getCornerOrientation(neigh, midIndex);
+            LOGGER_PRINT_VAR(thetaCorner[ind]);
 
             neighCircularIndexesL.resize(neighSizeL, 0);
             neighCircularIndexesR.resize(neighSizeR, 0);
 
             for (int i = 0; i < neighSizeL; ++i) {
-                neighCircularIndexesL[i] = getCircularSectorIndex(neigh[i], neigh[midIndex], thetaCorner[ind]);
+                int neighCircularIndexes = getCircularSectorIndex(neigh[i], neigh[midIndex], thetaCorner[ind]);
+                neighCircularIndexesL[i] = neighCircularIndexes;
+                LOGGER_PRINT("neighCircularIndexesL " << i << " " << neigh[i][0] << " " << neigh[i][1] << " " << neigh[midIndex][0] << " " << neigh[midIndex][1] << " " << thetaCorner[ind] << " " << neighCircularIndexes);
             }
             for (int i = 0; i < neighSizeR; ++i) {
-                neighCircularIndexesR[i] = getCircularSectorIndex(neigh[midIndex + i + 1], neigh[midIndex], thetaCorner[ind]);
+                int neighCircularIndexes = getCircularSectorIndex(neigh[midIndex + i + 1], neigh[midIndex], thetaCorner[ind]);
+                neighCircularIndexesR[i] = neighCircularIndexes;
+                LOGGER_PRINT("neighCircularIndexesR " << i << " " << neigh[midIndex + i + 1][0] << " " << neigh[midIndex + i + 1][1] << " " << neigh[midIndex][0] << " " << neigh[midIndex][1] << " " << thetaCorner[ind] << " " << neighCircularIndexes);
             }
 
             scoreL = 0;
@@ -98,21 +115,29 @@ namespace falkolib {
 
             for (int i = midIndex - 1; i >= 0; --i) {
                 for (int j = i; j >= 0; --j) {
-                    scoreL += circularSectorDistance(neighCircularIndexesL[i], neighCircularIndexesL[j], gridSectors);
+                    int score_ = circularSectorDistance(neighCircularIndexesL[i], neighCircularIndexesL[j], gridSectors);
+                    scoreL += score_;
+                    LOGGER_PRINT("(" << i << "," << j << ") score: " << score_ << ", acc: " << scoreL);
                 }
             }
 
             for (int i = midIndex + 1; i < neighSize; ++i) {
                 for (int j = i; j < neighSize; ++j) {
-                    scoreR += circularSectorDistance(neighCircularIndexesR[i - midIndex - 1], neighCircularIndexesR[j - midIndex - 1], gridSectors);
+                    int score_ = circularSectorDistance(neighCircularIndexesR[i - midIndex - 1], neighCircularIndexesR[j - midIndex - 1], gridSectors);
+                    scoreR += score_;
+                    LOGGER_PRINT("(" << i << "," << j << ") score: " << score_ << ", acc: " << scoreR);
                 }
             }
+            LOGGER_PRINT_VAR(scoreL);
+            LOGGER_PRINT_VAR(scoreR);
 
             scores[ind] = scoreL + scoreR;
+            LOGGER_PRINT_VAR(scores[ind]);
 
             if (scores[ind] > scoreMax) {
                 scoreMax = scores[ind];
             }
+            LOGGER_PRINT_VAR(scoreMax);
         }
 
         for (int ind = 0; ind < numBeams; ++ind) {
@@ -120,6 +145,7 @@ namespace falkolib {
                 scores[ind] = scoreMax;
             }
             scores[ind] = scoreMax - scores[ind];
+            LOGGER_PRINT("score " << ind << ": " << scores[ind]);
         }
 
         NMSKeypoint(scores, scan, 0, numBeams, NMSRadius, (scoreMax * minScoreTh / 100.0), peaks);
@@ -135,6 +161,10 @@ namespace falkolib {
             } else {
                 kp.point = scan.points[peaks[i]];
             }
+            LOGGER_PRINT_VAR(peaks[i]);
+            LOGGER_PRINT_VAR(thetaCorner[peaks[i]]);
+            LOGGER_PRINT_VAR(radius[peaks[i]]);
+            LOGGER_PRINT_VAR(scan.points[peaks[i]]);
 
             keypoints.push_back(std::move(kp));
         }
@@ -143,7 +173,9 @@ namespace falkolib {
 
     int FALKOExtractor::circularSectorDistance(int a1, int a2, int res) {
         const int r2 = res / 2;
-        return std::abs(((a1 - a2) + r2) % res - r2);
+        int ret = std::abs(((a1 - a2) + r2) % res - r2);
+        LOGGER_PRINT("circularSectorDistance " << a1 << ", " << a2 << ", " << res << ", " << r2 << ", " << ret);
+        return ret;
     }
 
     int FALKOExtractor::getCircularSectorIndex(const Point2d& p, const Point2d& pmid, double theta) {
@@ -173,6 +205,7 @@ namespace falkolib {
         oriR /= (size - (midIndex + 1));
         Point2d ori = oriL + oriR;
         double theta = atan2(ori(1), ori(0));
+        return theta;
     }
 
     void FALKOExtractor::NMSKeypoint(const std::vector<int>& scores, const LaserScan& scan, unsigned int ibeg, unsigned int iend, double radius, int minval, std::vector<int>& peaks) {
@@ -180,6 +213,11 @@ namespace falkolib {
         unsigned j, jbeg, jend, jmax;
         std::vector<int> candidates;
         peaks.clear();
+
+        LOGGER_PRINT_VAR(ibeg);
+        LOGGER_PRINT_VAR(iend);
+        LOGGER_PRINT_VAR(radius);
+        LOGGER_PRINT_VAR(minval);
 
         i = ibeg;
         imax = ibeg;
@@ -226,12 +264,16 @@ namespace falkolib {
                     ++i2;
                 }
             } else {
+                LOGGER_PRINT_VAR(i2);
+                LOGGER_PRINT_VAR(candidates[i2]);
                 peaks.push_back(candidates[i2]);
                 i2 = i1;
                 counter = 0;
             }
         }
         if (i2 != candidates.size()) {
+            LOGGER_PRINT_VAR(i2);
+            LOGGER_PRINT_VAR(candidates[i2]);
             peaks.push_back(candidates[i2]);
         }
     }

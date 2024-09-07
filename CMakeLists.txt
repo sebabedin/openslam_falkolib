@@ -29,6 +29,19 @@ else(${EIGEN3_FOUND})
   message(WARNING "Cannot find Eigen3 Library")
 endif(${EIGEN3_FOUND})
 
+# JSON
+find_package(nlohmann_json REQUIRED)  
+# message(STATUS "nlohmann_json_FOUND ${nlohmann_json_FOUND}")
+# message(STATUS "nlohmann_json_INCLUDE_DIRS ${nlohmann_json_INCLUDE_DIRS}")
+# message(STATUS "json_LIBRARY_DIRS ${json_LIBRARY_DIRS}")
+# message(STATUS "json_LIBRARIES ${json_LIBRARIES}")
+
+# if(${nlohmann_json_FOUND}) 
+#   message(STATUS "include dir: ${nlohmann_json_SOURCE_DIR}/nlohmann")
+#   include_directories(${nlohmann_json_SOURCE_DIR}/nlohmann)  
+#   # link_directories(${json_LIBRARY_DIRS})
+# endif()
+
 message(STATUS "include dir: ${falkolib_SOURCE_DIR}/include")
 message(STATUS "include dir: ${falkolib_SOURCE_DIR}/EXTERNAL")
 include_directories(${falkolib_SOURCE_DIR}/include ${falkolib_SOURCE_DIR}/EXTERNAL)  
@@ -40,6 +53,9 @@ add_library(falkolib
   src/Feature/CGH.cpp
   src/Feature/BSC.cpp
 )
+
+add_executable(testKeypointFalko_sintetic test/testKeypointFalko_sintetic.cpp test/test_data_sintetic.cpp)
+target_link_libraries(testKeypointFalko_sintetic falkolib ${Boost_LIBRARIES})
 
 add_executable(testKeypointFalko test/testKeypointFalko.cpp test/testData.cpp)
 target_link_libraries(testKeypointFalko falkolib ${Boost_LIBRARIES})

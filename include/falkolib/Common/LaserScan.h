@@ -22,6 +22,7 @@
 #include <vector>
 #include <falkolib/Common/Point.h>
 #include <falkolib/Common/GeomUtils.h>
+#include <falkolib/Common/logger.h>
 
 namespace falkolib {
 
@@ -127,16 +128,38 @@ namespace falkolib {
 		 */
 		void getNeighPoints(int candIndex, double radius, std::vector<Point2d>& neigh, int& midIndex) const {
 			const Point2d& candPoint = points[candIndex];
+			LOGGER_PRINT("candIndex: " << candIndex);
+			LOGGER_PRINT("candPoint: " << candPoint[0] << ", " << candPoint[1]);
+			LOGGER_PRINT("radius: " << radius);
 			int alpha = std::floor(std::asin(radius / ranges[candIndex]) / angleInc);
+			LOGGER_PRINT("ranges[candIndex]: " << ranges[candIndex]);
+			LOGGER_PRINT("angleInc: " << angleInc);
+			LOGGER_PRINT("alpha: " << alpha);
 			int begIndex = std::max(0, candIndex - alpha);
+			LOGGER_PRINT("begIndex: " << begIndex);
 			int endIndex = std::min(candIndex + alpha + 1, numBeams);
-			for (int i = begIndex; i <= endIndex; ++i) {
-				if (pointsDistance(points[i], candPoint) <= radius) {
+			LOGGER_PRINT("endIndex: " << endIndex);
+			//TODO: el rango de este for debe ser end_index, no incluirlo (ver que en la defición de endIndex))
+			// for (int i = begIndex; i <= endIndex; ++i) {
+			for (int i = begIndex; i < endIndex; ++i) {
+				if(points.size() <= i)
+				{
+					LOGGER_PRINT("error, fuera de rango, candIndex:" << candIndex << ", points.size():" << points.size() << ", i:" << i);
+				}
+				double distance = pointsDistance(points[i], candPoint);
+				LOGGER("points[i]: " << points[i][0] << " " << points[i][1]);
+				LOGGER(", distance: " << distance);
+				if (distance <= radius) {
 					if (i == candIndex) {
 						midIndex = neigh.size();
 					}
 					neigh.push_back(points[i]);
 				}
+				else
+				{
+					LOGGER(", OUT");
+				}
+				LOGGER_ENDL();
 			}
 		}
 

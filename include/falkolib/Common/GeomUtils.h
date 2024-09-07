@@ -64,7 +64,9 @@ namespace falkolib{
 	 */
 	template <typename T>
 	double signedTriangleArea(const T& p0, const T& p1, const T& p2) {
-		return ((p2[1] - p1[1]) * p0[0] - (p2[0] - p1[0]) * p0[1] + p2[0] * p1[1] - p2[1] * p1[0]);
+		// TODO: esta función calcula el área del romboide, para el triangulo hay que dividir por 2
+		// return ((p2[1] - p1[1]) * p0[0] - (p2[0] - p1[0]) * p0[1] + p2[0] * p1[1] - p2[1] * p1[0]);
+		return ((p2[1] - p1[1]) * p0[0] - (p2[0] - p1[0]) * p0[1] + p2[0] * p1[1] - p2[1] * p1[0]) / 2.0;
 	}
 	
 	/**
